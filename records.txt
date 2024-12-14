@@ -1,0 +1,1 @@
+Revenue : 500000.00 , Expenses : 100000.00 , taxRate : 30.00% , Earnings before Tax = 400000.000 , Profit = 250000.00 , ratio = 1.60

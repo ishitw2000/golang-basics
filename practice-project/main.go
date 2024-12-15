@@ -3,22 +3,46 @@ package main
 import (
 	"fmt"
 
-	"example.com/price-calculator/cmdmanager"
+	"example.com/price-calculator/filemanager"
 	"example.com/price-calculator/prices"
 )
 
 func main() {
 	taxRates := []float64{0, 0.07, 0.1, 0.15}
+	doneChans := make([]chan bool, len(taxRates))
+	errorChans := make([]chan error, len(taxRates))
 
-	for _, taxRate := range taxRates {
-		// fm := filemanager.New("prices.txt", fmt.Sprintf("result_%.0f.json", taxRate*100))
-		cmd := cmdmanager.New()
-		priceJob := prices.NewTaxIncludedPriceJob(cmd, taxRate)
-		err := priceJob.Process()
-		if err != nil {
-			fmt.Println("Could not process job")
-			fmt.Println(err.Error())
+	for index, taxRate := range taxRates {
+		fm := filemanager.New("/Users/ishitwa/Developer/go-basics/practice-project/prices.txt", fmt.Sprintf("result_%.0f.json", taxRate*100))
+		doneChans[index] = make(chan bool)
+		errorChans[index] = make(chan error)
+		// cmd := cmdmanager.New()
+		priceJob := prices.NewTaxIncludedPriceJob(&fm, taxRate)
+		go priceJob.Process(doneChans[index], errorChans[index])
+		// if err != nil {
+		// 	fmt.Println("Could not process job")
+		// 	fmt.Println(err.Error())
+		// }
+	}
+
+	for index := range taxRates {
+		select {
+		case err := <-errorChans[index]:
+			if err != nil {
+				fmt.Println(err)
+			}
+		case <-doneChans[index]:
+			fmt.Println("Done!")
 		}
 	}
+	// select
+
+	// for _, doneChan := range doneChans {
+	// 	<-doneChan
+	// }
+
+	// for _, errorChan := range errorChans {
+	// 	<-errorChan
+	// }
 
 }

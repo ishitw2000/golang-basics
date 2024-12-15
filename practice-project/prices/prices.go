@@ -1,7 +1,6 @@
 package prices
 
 import (
-	"errors"
 	"fmt"
 
 	"example.com/price-calculator/conversion"
@@ -33,10 +32,13 @@ func (job *TaxIncludedPriceJob) LoadData() error {
 	return nil
 }
 
-func (job *TaxIncludedPriceJob) Process() error {
+func (job *TaxIncludedPriceJob) Process(doneChan chan bool, errorChan chan error) {
 	err := job.LoadData()
+	// errorChan <- errors.New("Error!")
 	if err != nil {
-		return errors.New(err.Error())
+		// return errors.New(err.Error())
+		errorChan <- err
+		return
 	}
 	result := make(map[string]string)
 	for _, price := range job.InputPrices {
@@ -45,7 +47,8 @@ func (job *TaxIncludedPriceJob) Process() error {
 	}
 
 	job.TaxIncludedPrices = result
-	return job.IOManager.WriteResult(*job)
+	job.IOManager.WriteResult(*job)
+	doneChan <- true
 }
 
 func NewTaxIncludedPriceJob(iomanager iomanager.IOManager, taxRate float64) *TaxIncludedPriceJob {
